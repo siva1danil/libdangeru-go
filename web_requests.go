@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-type res_statistics struct {
+type res_main struct {
+	News             string
 	Threads          uint
 	Replies          uint
 	Archived_Threads uint
@@ -21,9 +22,9 @@ type archive_entry struct {
 }
 type res_archive_index []archive_entry
 
-// Try to extract the latest news entry from the main page.
-func (client *dangeru_client_web) News() (string, error) {
-	res := ""
+// Try to extract latest news and statistics from the main page.
+func (client *dangeru_client_web) Main() (res_main, error) {
+	res := res_main{}
 	path := client.addr.PathWebMain
 	data, err := client.get(path)
 	if err != nil {
@@ -38,38 +39,16 @@ func (client *dangeru_client_web) News() (string, error) {
 	if news == nil {
 		return res, fmt.Errorf("find: expected match, got nil")
 	} else {
-		res = string(news[1])
-	}
-
-	return res, nil
-}
-
-// Try to extract the statistics from the main page.
-func (client *dangeru_client_web) Statistics() (res_statistics, error) {
-	res := res_statistics{}
-	path := client.addr.PathWebMain
-	data, err := client.get(path)
-	if err != nil {
-		return res, err
-	}
-
-	if client.debug {
-		fmt.Println(string(data))
+		res.News = string(news[1])
 	}
 
 	html := strings.NewReplacer("\r", "", "\n", "", " ", "").Replace(string(data))
-
-	if client.debug {
-		fmt.Println(html)
-	}
-
 	threads := regexp.MustCompile(`(\d+)</span>threads`).FindStringSubmatch(html)
 	replies := regexp.MustCompile(`(\d+)</span>replies`).FindStringSubmatch(html)
 	archived_threads := regexp.MustCompile(`(\d+)</span><ahref="/archive">`).FindStringSubmatch(html)
 	archived_replies := regexp.MustCompile(`(\d+)</span>archivedreplies`).FindStringSubmatch(html)
 	burgs := regexp.MustCompile(`(\d+)</span>burgs`).FindStringSubmatch(html)
 	angry_burgs := regexp.MustCompile(`(\d+)</span>angryburgs`).FindStringSubmatch(html)
-
 	if threads == nil || replies == nil || archived_threads == nil || archived_replies == nil || burgs == nil || angry_burgs == nil {
 		return res, fmt.Errorf("find: expected match, got nil")
 	} else {
