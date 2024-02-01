@@ -37,7 +37,7 @@ type reply_metadata struct {
 }
 type res_replies []reply_metadata
 
-// Get all available boards. /all/ is not filtered.
+// Get all available boards. /all/ is filtered.
 //
 // Route: /api/v2/boards
 func (client *dangeru_client_api) Boards() (res_boards, error) {
@@ -52,9 +52,16 @@ func (client *dangeru_client_api) Boards() (res_boards, error) {
 		fmt.Println(string(data))
 	}
 
-	err = json.Unmarshal(data, &res)
+	tmp := []string{}
+	err = json.Unmarshal(data, &tmp)
 	if err != nil {
 		return res, err
+	}
+
+	for i := 0; i < len(tmp); i++ {
+		if tmp[i] != "all" {
+			res = append(res, tmp[i])
+		}
 	}
 
 	return res, nil
