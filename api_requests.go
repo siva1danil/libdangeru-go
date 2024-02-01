@@ -11,31 +11,25 @@ type res_board_details struct {
 	Desc  string `json:"desc"`
 	Rules string `json:"rules"`
 }
-type thread_metadata struct {
-	Post_ID           uint   `json:"post_id"`
-	Board             string `json:"board"`
-	Is_OP             bool   `json:"is_op"`
-	Comment           string `json:"comment"`
-	Date_Posted       uint   `json:"date_posted"`
-	Title             string `json:"title"`
-	Last_Bumped       uint   `json:"last_bumped"`
-	Is_Locked         bool   `json:"is_locked"`
-	Number_Of_Replies uint   `json:"number_of_replies"`
-	Sticky            bool   `json:"sticky"`
-	Stickyness        uint   `json:"stickyness"`
-	Hash              string `json:"hash"`
+type post struct {
+	Post_ID           uint   `json:"post_id"`           // Thread & Reply
+	Board             string `json:"board"`             // Thread & Reply
+	Comment           string `json:"comment"`           // Thread & Reply
+	Date_Posted       uint   `json:"date_posted"`       // Thread & Reply
+	IP                string `json:"ip"`                // Thread & Reply; auth-only
+	Capcode           string `json:"capcode"`           // Thread & Reply; auth-only
+	Is_OP             bool   `json:"is_op"`             // Is the post thread or reply?
+	Parent            uint   `json:"parent"`            // Reply
+	Title             string `json:"title"`             // Thread
+	Last_Bumped       uint   `json:"last_bumped"`       // Thread
+	Is_Locked         bool   `json:"is_locked"`         // Thread
+	Number_Of_Replies uint   `json:"number_of_replies"` // Thread
+	Sticky            bool   `json:"sticky"`            // Thread
+	Stickyness        uint   `json:"stickyness"`        // Thread
+	Hash              string `json:"hash"`              // Thread
 }
-type res_threads []thread_metadata
-type reply_metadata struct {
-	Post_ID     uint   `json:"post_id"`
-	Board       string `json:"board"`
-	Is_OP       bool   `json:"is_op"`
-	Comment     string `json:"comment"`
-	Date_Posted uint   `json:"date_posted"`
-	Parent      uint   `json:"parent"`
-	Hash        string `json:"hash"`
-}
-type res_replies []reply_metadata
+type res_threads []post
+type res_replies []post
 
 // Get all available boards. /all/ is filtered.
 //
@@ -116,8 +110,8 @@ func (client *dangeru_client_api) Threads(board string, page uint) (res_threads,
 // Get the metadata for a thread.
 //
 // Route: /api/v2/thread/$thread$/metadata
-func (client *dangeru_client_api) ThreadMetadata(id uint) (thread_metadata, error) {
-	res := thread_metadata{}
+func (client *dangeru_client_api) ThreadMetadata(id uint) (post, error) {
+	res := post{}
 	path := fmt.Sprintf(client.addr.PathThreadMetadata, id)
 	data, err := client.get(path)
 	if err != nil {
