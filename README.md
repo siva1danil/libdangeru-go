@@ -14,6 +14,5 @@ Currently, `libdangeru-go` offers two main components:
 - ThreadReplies(): Retrieve replies to a specific thread.
 
 ### Web Client
-- News(): Access the latest news entry from main page.
-- Statistics(): Get statistics from the main page.
+- Main(): Access the latest news entry and statistics from main page.
 - ArchiveIndex(): Fetch the archive index of threads.
