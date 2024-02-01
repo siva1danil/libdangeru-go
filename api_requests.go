@@ -34,7 +34,7 @@ type res_replies []post
 // Get all available boards. /all/ is filtered.
 //
 // Route: /api/v2/boards
-func (client *dangeru_client_api) Boards() (res_boards, error) {
+func (client *ClientAPI) Boards() (res_boards, error) {
 	res := res_boards{}
 	path := client.addr.PathBoards
 	data, err := client.get(path)
@@ -64,7 +64,7 @@ func (client *dangeru_client_api) Boards() (res_boards, error) {
 // Get details for a board.
 //
 // Route: /api/v2/board/$board$/detail
-func (client *dangeru_client_api) BoardDetails(board string) (res_board_details, error) {
+func (client *ClientAPI) BoardDetails(board string) (res_board_details, error) {
 	res := res_board_details{}
 	path := fmt.Sprintf(client.addr.PathBoardDetails, board)
 	data, err := client.get(path)
@@ -87,7 +87,7 @@ func (client *dangeru_client_api) BoardDetails(board string) (res_board_details,
 // Get active threads for a board. First page is 0.
 //
 // Route: /api/v2/board/$board$?page=$page$
-func (client *dangeru_client_api) Threads(board string, page uint) (res_threads, error) {
+func (client *ClientAPI) Threads(board string, page uint) (res_threads, error) {
 	res := res_threads{}
 	path := fmt.Sprintf(client.addr.PathThreads, board, page)
 	data, err := client.get(path)
@@ -110,7 +110,7 @@ func (client *dangeru_client_api) Threads(board string, page uint) (res_threads,
 // Get the metadata for a thread.
 //
 // Route: /api/v2/thread/$thread$/metadata
-func (client *dangeru_client_api) ThreadMetadata(id uint) (post, error) {
+func (client *ClientAPI) ThreadMetadata(id uint) (post, error) {
 	res := post{}
 	path := fmt.Sprintf(client.addr.PathThreadMetadata, id)
 	data, err := client.get(path)
@@ -133,7 +133,7 @@ func (client *dangeru_client_api) ThreadMetadata(id uint) (post, error) {
 // Get all replies for a thread. Metadata is currently not parsed.
 //
 // Route: /api/v2/thread/$thread$/replies
-func (client *dangeru_client_api) ThreadReplies(id uint) (res_replies, error) {
+func (client *ClientAPI) ThreadReplies(id uint) (res_replies, error) {
 	res := res_replies{}
 	path := fmt.Sprintf(client.addr.PathThreadReplies, id)
 	data, err := client.get(path)

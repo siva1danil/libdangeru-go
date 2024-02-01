@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-type dangeru_addr struct {
+type Addr struct {
 	Scheme             string
 	Domain             string
 	PathBoards         string
@@ -16,17 +16,17 @@ type dangeru_addr struct {
 	PathWebArchive     string
 }
 
-type dangeru_options struct {
-	Addr      dangeru_addr
+type ClientOptions struct {
+	Addr      Addr
 	Client    http.Client
 	UserAgent string
 	Debug     bool
 }
 
 // Initialize a default options object.
-func NewOptions() dangeru_options {
-	options := dangeru_options{
-		Addr: dangeru_addr{
+func NewOptions() ClientOptions {
+	options := ClientOptions{
+		Addr: Addr{
 			Scheme:             "https",
 			Domain:             "dangeru.us",
 			PathBoards:         "api/v2/boards",

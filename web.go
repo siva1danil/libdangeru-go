@@ -5,15 +5,15 @@ import (
 	"net/http"
 )
 
-type dangeru_client_web struct {
-	addr   dangeru_addr
+type ClientWeb struct {
+	addr   Addr
 	client http.Client
 	debug  bool
 }
 
 // Create a new dangeru_client_web with options.
-func NewClientWeb(options *dangeru_options) dangeru_client_web {
-	client_web := dangeru_client_web{
+func NewClientWeb(options *ClientOptions) ClientWeb {
+	client_web := ClientWeb{
 		addr:   options.Addr,
 		client: options.Client,
 		debug:  options.Debug,
@@ -22,7 +22,7 @@ func NewClientWeb(options *dangeru_options) dangeru_client_web {
 	return client_web
 }
 
-func (client *dangeru_client_web) get(path string) ([]byte, error) {
+func (client *ClientWeb) get(path string) ([]byte, error) {
 	url := client.addr.Scheme + "://" + client.addr.Domain + "/" + path
 
 	req, err := client.client.Get(url)

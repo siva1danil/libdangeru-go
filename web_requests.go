@@ -23,7 +23,7 @@ type archive_entry struct {
 type res_archive_index []archive_entry
 
 // Try to extract latest news and statistics from the main page.
-func (client *dangeru_client_web) Main() (res_main, error) {
+func (client *ClientWeb) Main() (res_main, error) {
 	res := res_main{}
 	path := client.addr.PathWebMain
 	data, err := client.get(path)
@@ -71,7 +71,7 @@ func (client *dangeru_client_web) Main() (res_main, error) {
 
 // Try to extract thread IDs from the archive page.
 // Use dangeru_client_api.ThreadMetadata() to get full metadata.
-func (client *dangeru_client_web) ArchiveIndex(page uint) (res_archive_index, error) {
+func (client *ClientWeb) ArchiveIndex(page uint) (res_archive_index, error) {
 	res := res_archive_index{}
 	path := client.addr.PathWebArchive
 	data, err := client.get(path)
