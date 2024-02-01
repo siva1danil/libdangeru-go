@@ -16,6 +16,7 @@ type post struct {
 	Board             string `json:"board"`             // Thread & Reply
 	Comment           string `json:"comment"`           // Thread & Reply
 	Date_Posted       uint   `json:"date_posted"`       // Thread & Reply
+	Hash              string `json:"hash"`              // Thread & Reply
 	IP                string `json:"ip"`                // Thread & Reply; auth-only
 	Capcode           string `json:"capcode"`           // Thread & Reply; auth-only
 	Is_OP             bool   `json:"is_op"`             // Is the post thread or reply?
@@ -26,7 +27,6 @@ type post struct {
 	Number_Of_Replies uint   `json:"number_of_replies"` // Thread
 	Sticky            bool   `json:"sticky"`            // Thread
 	Stickyness        uint   `json:"stickyness"`        // Thread
-	Hash              string `json:"hash"`              // Thread
 }
 type res_threads []post
 type res_replies []post
