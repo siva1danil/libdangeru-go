@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type res_main struct {
+type MainPage struct {
 	News             string
 	Threads          uint
 	Replies          uint
@@ -16,19 +16,18 @@ type res_main struct {
 	Burgs            uint
 	Angry_Burgs      uint
 }
-type archive_entry struct {
+type ArchivePageEntry struct {
 	Board string
 	ID    uint
 }
-type res_archive_index []archive_entry
 
 // Try to extract latest news and statistics from the main page.
-func (client *ClientWeb) Main() (res_main, error) {
-	res := res_main{}
+func (client *ClientWeb) Main() (MainPage, error) {
+	result := MainPage{}
 	path := client.addr.PathWebMain
 	data, err := client.get(path)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
 	if client.debug {
@@ -37,9 +36,9 @@ func (client *ClientWeb) Main() (res_main, error) {
 
 	news := regexp.MustCompile(`<span class="redtext">(.*?)</span>`).FindSubmatch(data)
 	if news == nil {
-		return res, fmt.Errorf("find: expected match, got nil")
+		return result, fmt.Errorf("find: expected match, got nil")
 	} else {
-		res.News = string(news[1])
+		result.News = string(news[1])
 	}
 
 	html := strings.NewReplacer("\r", "", "\n", "", " ", "").Replace(string(data))
@@ -50,33 +49,33 @@ func (client *ClientWeb) Main() (res_main, error) {
 	burgs := regexp.MustCompile(`(\d+)</span>burgs`).FindStringSubmatch(html)
 	angry_burgs := regexp.MustCompile(`(\d+)</span>angryburgs`).FindStringSubmatch(html)
 	if threads == nil || replies == nil || archived_threads == nil || archived_replies == nil || burgs == nil || angry_burgs == nil {
-		return res, fmt.Errorf("find: expected match, got nil")
+		return result, fmt.Errorf("find: expected match, got nil")
 	} else {
 		tmp, _ := strconv.ParseUint(threads[1], 10, 32)
-		res.Threads = uint(tmp)
+		result.Threads = uint(tmp)
 		tmp, _ = strconv.ParseUint(replies[1], 10, 32)
-		res.Replies = uint(tmp)
+		result.Replies = uint(tmp)
 		tmp, _ = strconv.ParseUint(archived_threads[1], 10, 32)
-		res.Archived_Threads = uint(tmp)
+		result.Archived_Threads = uint(tmp)
 		tmp, _ = strconv.ParseUint(archived_replies[1], 10, 32)
-		res.Archived_Replies = uint(tmp)
+		result.Archived_Replies = uint(tmp)
 		tmp, _ = strconv.ParseUint(burgs[1], 10, 32)
-		res.Burgs = uint(tmp)
+		result.Burgs = uint(tmp)
 		tmp, _ = strconv.ParseUint(angry_burgs[1], 10, 32)
-		res.Angry_Burgs = uint(tmp)
+		result.Angry_Burgs = uint(tmp)
 	}
 
-	return res, nil
+	return result, nil
 }
 
 // Try to extract thread IDs from the archive page.
 // Use dangeru_client_api.ThreadMetadata() to get full metadata.
-func (client *ClientWeb) ArchiveIndex(page uint) (res_archive_index, error) {
-	res := res_archive_index{}
+func (client *ClientWeb) ArchiveIndex(page uint) ([]ArchivePageEntry, error) {
+	result := []ArchivePageEntry{}
 	path := client.addr.PathWebArchive
 	data, err := client.get(path)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
 	if client.debug {
@@ -86,8 +85,8 @@ func (client *ClientWeb) ArchiveIndex(page uint) (res_archive_index, error) {
 	entries := regexp.MustCompile(`href="/(.+?)/thread/(\d+?)"`).FindAllSubmatch(data, -1)
 	for i := 0; i < len(entries); i++ {
 		tmp, _ := strconv.ParseUint(string(entries[i][2]), 10, 32)
-		res = append(res, archive_entry{Board: string(entries[i][1]), ID: uint(tmp)})
+		result = append(result, ArchivePageEntry{Board: string(entries[i][1]), ID: uint(tmp)})
 	}
 
-	return res, nil
+	return result, nil
 }

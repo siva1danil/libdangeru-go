@@ -5,13 +5,13 @@ import (
 	"fmt"
 )
 
-type res_boards []string
-type res_board_details struct {
+type Boards []string
+type BoardDetails struct {
 	Name  string `json:"name"`
 	Desc  string `json:"desc"`
 	Rules string `json:"rules"`
 }
-type post struct {
+type Post struct {
 	Post_ID           uint   `json:"post_id"`           // Thread & Reply
 	Board             string `json:"board"`             // Thread & Reply
 	Comment           string `json:"comment"`           // Thread & Reply
@@ -28,18 +28,16 @@ type post struct {
 	Sticky            bool   `json:"sticky"`            // Thread
 	Stickyness        uint   `json:"stickyness"`        // Thread
 }
-type res_threads []post
-type res_replies []post
 
 // Get all available boards. /all/ is filtered.
 //
 // Route: /api/v2/boards
-func (client *ClientAPI) Boards() (res_boards, error) {
-	res := res_boards{}
+func (client *ClientAPI) Boards() (Boards, error) {
+	result := Boards{}
 	path := client.addr.PathBoards
 	data, err := client.get(path)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
 	if client.debug {
@@ -49,106 +47,106 @@ func (client *ClientAPI) Boards() (res_boards, error) {
 	tmp := []string{}
 	err = json.Unmarshal(data, &tmp)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
 	for i := 0; i < len(tmp); i++ {
 		if tmp[i] != "all" {
-			res = append(res, tmp[i])
+			result = append(result, tmp[i])
 		}
 	}
 
-	return res, nil
+	return result, nil
 }
 
 // Get details for a board.
 //
 // Route: /api/v2/board/$board$/detail
-func (client *ClientAPI) BoardDetails(board string) (res_board_details, error) {
-	res := res_board_details{}
+func (client *ClientAPI) BoardDetails(board string) (BoardDetails, error) {
+	result := BoardDetails{}
 	path := fmt.Sprintf(client.addr.PathBoardDetails, board)
 	data, err := client.get(path)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
 	if client.debug {
 		fmt.Println(string(data))
 	}
 
-	err = json.Unmarshal(data, &res)
+	err = json.Unmarshal(data, &result)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
-	return res, nil
+	return result, nil
 }
 
 // Get active threads for a board. First page is 0.
 //
 // Route: /api/v2/board/$board$?page=$page$
-func (client *ClientAPI) Threads(board string, page uint) (res_threads, error) {
-	res := res_threads{}
+func (client *ClientAPI) Threads(board string, page uint) ([]Post, error) {
+	result := []Post{}
 	path := fmt.Sprintf(client.addr.PathThreads, board, page)
 	data, err := client.get(path)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
 	if client.debug {
 		fmt.Println(string(data))
 	}
 
-	err = json.Unmarshal(data, &res)
+	err = json.Unmarshal(data, &result)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
-	return res, nil
+	return result, nil
 }
 
 // Get the metadata for a thread.
 //
 // Route: /api/v2/thread/$thread$/metadata
-func (client *ClientAPI) ThreadMetadata(id uint) (post, error) {
-	res := post{}
+func (client *ClientAPI) ThreadMetadata(id uint) (Post, error) {
+	result := Post{}
 	path := fmt.Sprintf(client.addr.PathThreadMetadata, id)
 	data, err := client.get(path)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
 	if client.debug {
 		fmt.Println(string(data))
 	}
 
-	err = json.Unmarshal(data, &res)
+	err = json.Unmarshal(data, &result)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
-	return res, nil
+	return result, nil
 }
 
 // Get all replies for a thread. Metadata is currently not parsed.
 //
 // Route: /api/v2/thread/$thread$/replies
-func (client *ClientAPI) ThreadReplies(id uint) (res_replies, error) {
-	res := res_replies{}
+func (client *ClientAPI) ThreadReplies(id uint) ([]Post, error) {
+	result := []Post{}
 	path := fmt.Sprintf(client.addr.PathThreadReplies, id)
 	data, err := client.get(path)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
 	if client.debug {
 		fmt.Println(string(data))
 	}
 
-	err = json.Unmarshal(data, &res)
+	err = json.Unmarshal(data, &result)
 	if err != nil {
-		return res, err
+		return result, err
 	}
 
-	return res, nil
+	return result, nil
 }
