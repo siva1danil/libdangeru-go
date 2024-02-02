@@ -105,6 +105,13 @@ func (client *ClientAPI) Threads(board string, page uint) ([]Post, error) {
 	return result, nil
 }
 
+// Get active threads for all boards. First page is 0.
+//
+// Route: /api/v2/board/all?page=$page$
+func (client *ClientAPI) ThreadsAll(page uint) ([]Post, error) {
+	return client.Threads("all", page)
+}
+
 // Get the metadata for a thread.
 //
 // Route: /api/v2/thread/$thread$/metadata
