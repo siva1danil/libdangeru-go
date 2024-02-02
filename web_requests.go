@@ -22,7 +22,7 @@ type ArchivePageEntry struct {
 }
 
 // Try to extract latest news and statistics from the main page.
-func (client *ClientWeb) Main() (MainPage, error) {
+func (client *ClientWeb) MainPage() (MainPage, error) {
 	result := MainPage{}
 	path := client.addr.PathWebMain
 	data, err := client.get(path)
