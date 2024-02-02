@@ -7,12 +7,15 @@
 Currently, `libdangeru-go` offers two main components:
 
 ### API Client
+- PostThread(): Post a new thread
+- PostReply(): Post a reply to a thread
 - Boards(): Retrieve a list of all boards.
 - BoardDetails(): Get detailed information about a specific board.
 - Threads(): Access threads from a specific board.
+- ThreadsAll(): Access threads from all boards.
 - ThreadMetadata(): Fetch metadata for a given thread.
 - ThreadReplies(): Retrieve replies to a specific thread.
 
 ### Web Client
-- Main(): Access the latest news entry and statistics from main page.
+- MainPage(): Access the latest news entry and statistics from main page.
 - ArchiveIndex(): Fetch the archive index of threads.
