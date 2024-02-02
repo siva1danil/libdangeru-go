@@ -3,6 +3,7 @@ package libdangeru
 import (
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type ClientAPI struct {
@@ -26,6 +27,23 @@ func (client *ClientAPI) get(path string) ([]byte, error) {
 	url := client.addr.Scheme + "://" + client.addr.Domain + "/" + path
 
 	req, err := client.client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer req.Body.Close()
+
+	data, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (client *ClientAPI) post(path string, form url.Values) ([]byte, error) {
+	url := client.addr.Scheme + "://" + client.addr.Domain + "/" + path
+
+	req, err := client.client.PostForm(url, form)
 	if err != nil {
 		return nil, err
 	}

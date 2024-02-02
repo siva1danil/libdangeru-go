@@ -3,6 +3,9 @@ package libdangeru
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
 )
 
 type Boards []string
@@ -27,6 +30,64 @@ type Post struct {
 	Number_Of_Replies uint   `json:"number_of_replies"` // Thread
 	Sticky            bool   `json:"sticky"`            // Thread
 	Stickyness        uint   `json:"stickyness"`        // Thread
+}
+
+// Create and post a new thread.
+//
+// Route: /post
+func (client *ClientAPI) PostThread(board string, title string, comment string, capcode bool) error {
+	path := client.addr.PathPostThread
+	form := url.Values{}
+	form.Add("board", board)
+	form.Add("title", title)
+	form.Add("comment", comment)
+	if capcode {
+		form.Add("capcode", "true")
+	}
+	data, err := client.post(path, form)
+	if err != nil {
+		return err
+	}
+
+	if client.debug {
+		fmt.Println(string(data))
+	}
+
+	return nil
+}
+
+// Create and post a new reply.
+//
+// Route: /reply
+func (client *ClientAPI) PostReply(board string, parent uint, content string, capcode bool) (uint, error) {
+	path := client.addr.PathPostReply
+	form := url.Values{}
+	form.Add("board", board)
+	form.Add("parent", strconv.Itoa(int(parent)))
+	form.Add("content", content)
+	if capcode {
+		form.Add("capcode", "true")
+	}
+	data, err := client.post(path, form)
+	if err != nil {
+		return 0, err
+	}
+	// TODO: make post return headers, parse ID from Location header
+
+	if client.debug {
+		fmt.Println(string(data))
+	}
+
+	result_str, ok := strings.CutPrefix(string(data), "OK/")
+	if !ok {
+		return 0, fmt.Errorf("expected OK: %s", string(data))
+	}
+	result, err := strconv.Atoi(result_str)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint(result), nil
 }
 
 // Get all available boards. /all/ is filtered.

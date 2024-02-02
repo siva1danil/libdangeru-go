@@ -7,6 +7,8 @@ import (
 type Addr struct {
 	Scheme             string
 	Domain             string
+	PathPostThread     string
+	PathPostReply      string
 	PathBoards         string
 	PathBoardDetails   string
 	PathThreads        string
@@ -29,6 +31,8 @@ func NewOptions() ClientOptions {
 		Addr: Addr{
 			Scheme:             "https",
 			Domain:             "dangeru.us",
+			PathPostThread:     "post",
+			PathPostReply:      "reply",
 			PathBoards:         "api/v2/boards",
 			PathBoardDetails:   "api/v2/board/%s/detail",
 			PathThreads:        "api/v2/board/%s?page=%d",
