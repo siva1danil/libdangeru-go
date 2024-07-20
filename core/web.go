@@ -1,11 +1,18 @@
-package libdangeru
+package core
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 )
+
+type ClientWeb struct {
+	Address string
+	Http    http.Client
+}
 
 type MainPage struct {
 	News             string
@@ -16,22 +23,44 @@ type MainPage struct {
 	Burgs            uint
 	Angry_Burgs      uint
 }
+
 type ArchivePageEntry struct {
 	Board string
 	ID    uint
 }
 
+func (client *ClientWeb) init() {
+	if client.Address == "" {
+		client.Address = ADDRESS
+	}
+}
+
+func (client *ClientWeb) get(path string) ([]byte, error) {
+	client.init()
+
+	url := client.Address + "/" + path
+
+	req, err := client.Http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer req.Body.Close()
+
+	data, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 // Try to extract latest news and statistics from the main page.
 func (client *ClientWeb) MainPage() (MainPage, error) {
 	result := MainPage{}
-	path := client.addr.PathWebMain
+	path := PATH_WEB_MAIN
 	data, err := client.get(path)
 	if err != nil {
 		return result, err
-	}
-
-	if client.debug {
-		fmt.Println(string(data))
 	}
 
 	news := regexp.MustCompile(`<span class="redtext">(.*?)</span>`).FindSubmatch(data)
@@ -69,17 +98,13 @@ func (client *ClientWeb) MainPage() (MainPage, error) {
 }
 
 // Try to extract thread IDs from the archive page.
-// Use dangeru_client_api.ThreadMetadata() to get full metadata.
+// Use ClientAPI.ThreadMetadata() to get full metadata.
 func (client *ClientWeb) ArchiveIndex(page uint) ([]ArchivePageEntry, error) {
 	result := []ArchivePageEntry{}
-	path := client.addr.PathWebArchive
+	path := PATH_WEB_ARCHIVE
 	data, err := client.get(path)
 	if err != nil {
 		return result, err
-	}
-
-	if client.debug {
-		fmt.Println(string(data))
 	}
 
 	entries := regexp.MustCompile(`href="/(.+?)/thread/(\d+?)"`).FindAllSubmatch(data, -1)

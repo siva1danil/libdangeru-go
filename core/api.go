@@ -1,19 +1,29 @@
-package libdangeru
+package core
 
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 )
 
-type Boards []string
+// ClientAPI represents an API client for interacting with the danger/u/ server.
+type ClientAPI struct {
+	Address string
+	Http    http.Client
+}
+
+// BoardDetails represents the details of a board.
 type BoardDetails struct {
 	Name  string `json:"name"`
 	Desc  string `json:"desc"`
 	Rules string `json:"rules"`
 }
+
+// Post represents a post on a thread or reply.
 type Post struct {
 	Post_ID           uint   `json:"post_id"`           // Thread & Reply
 	Board             string `json:"board"`             // Thread & Reply
@@ -22,7 +32,7 @@ type Post struct {
 	Hash              string `json:"hash"`              // Thread & Reply
 	IP                string `json:"ip"`                // Thread & Reply; auth-only
 	Capcode           string `json:"capcode"`           // Thread & Reply; auth-only
-	Is_OP             bool   `json:"is_op"`             // Is the post thread or reply?
+	Is_OP             bool   `json:"is_op"`             // Thread & Reply
 	Parent            uint   `json:"parent"`            // Reply
 	Title             string `json:"title"`             // Thread
 	Last_Bumped       uint   `json:"last_bumped"`       // Thread
@@ -32,11 +42,55 @@ type Post struct {
 	Stickyness        uint   `json:"stickyness"`        // Thread
 }
 
-// Create and post a new thread.
+func (client *ClientAPI) init() {
+	if client.Address == "" {
+		client.Address = ADDRESS
+	}
+}
+
+func (client *ClientAPI) get(path string) ([]byte, error) {
+	client.init()
+
+	url := client.Address + "/" + path
+
+	resp, err := client.Http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (client *ClientAPI) post(path string, form url.Values) ([]byte, error) {
+	client.init()
+
+	url := client.Address + "/" + path
+
+	resp, err := client.Http.PostForm(url, form)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+// Create a new thread.
 //
 // Route: /post
 func (client *ClientAPI) PostThread(board string, title string, comment string, capcode bool) error {
-	path := client.addr.PathPostThread
+	path := "/post"
 	form := url.Values{}
 	form.Add("board", board)
 	form.Add("title", title)
@@ -44,23 +98,20 @@ func (client *ClientAPI) PostThread(board string, title string, comment string, 
 	if capcode {
 		form.Add("capcode", "true")
 	}
-	data, err := client.post(path, form)
+
+	_, err := client.post(path, form)
 	if err != nil {
 		return err
-	}
-
-	if client.debug {
-		fmt.Println(string(data))
 	}
 
 	return nil
 }
 
-// Create and post a new reply.
+// Create a new reply.
 //
 // Route: /reply
-func (client *ClientAPI) PostReply(board string, parent uint, content string, capcode bool) (uint, error) {
-	path := client.addr.PathPostReply
+func (client *ClientAPI) PostReply(board string, parent uint, content string, capcode bool) (int, error) {
+	path := PATH_API_POST_REPLY
 	form := url.Values{}
 	form.Add("board", board)
 	form.Add("parent", strconv.Itoa(int(parent)))
@@ -68,14 +119,10 @@ func (client *ClientAPI) PostReply(board string, parent uint, content string, ca
 	if capcode {
 		form.Add("capcode", "true")
 	}
+
 	data, err := client.post(path, form)
 	if err != nil {
 		return 0, err
-	}
-	// TODO: make post return headers, parse ID from Location header
-
-	if client.debug {
-		fmt.Println(string(data))
 	}
 
 	result_str, ok := strings.CutPrefix(string(data), "OK/")
@@ -87,22 +134,19 @@ func (client *ClientAPI) PostReply(board string, parent uint, content string, ca
 		return 0, err
 	}
 
-	return uint(result), nil
+	return result, nil
 }
 
 // Get all available boards. /all/ is filtered.
 //
 // Route: /api/v2/boards
-func (client *ClientAPI) Boards() (Boards, error) {
-	result := Boards{}
-	path := client.addr.PathBoards
+func (client *ClientAPI) Boards() ([]string, error) {
+	result := []string{}
+	path := PATH_API_BOARDS
+
 	data, err := client.get(path)
 	if err != nil {
 		return result, err
-	}
-
-	if client.debug {
-		fmt.Println(string(data))
 	}
 
 	tmp := []string{}
@@ -125,14 +169,11 @@ func (client *ClientAPI) Boards() (Boards, error) {
 // Route: /api/v2/board/$board$/detail
 func (client *ClientAPI) BoardDetails(board string) (BoardDetails, error) {
 	result := BoardDetails{}
-	path := fmt.Sprintf(client.addr.PathBoardDetails, board)
+	path := fmt.Sprintf(PATH_API_BOARD_DETAILS, board)
+
 	data, err := client.get(path)
 	if err != nil {
 		return result, err
-	}
-
-	if client.debug {
-		fmt.Println(string(data))
 	}
 
 	err = json.Unmarshal(data, &result)
@@ -148,14 +189,11 @@ func (client *ClientAPI) BoardDetails(board string) (BoardDetails, error) {
 // Route: /api/v2/board/$board$?page=$page$
 func (client *ClientAPI) Threads(board string, page uint) ([]Post, error) {
 	result := []Post{}
-	path := fmt.Sprintf(client.addr.PathThreads, board, page)
+	path := fmt.Sprintf(PATH_API_THREADS, board, page)
+
 	data, err := client.get(path)
 	if err != nil {
 		return result, err
-	}
-
-	if client.debug {
-		fmt.Println(string(data))
 	}
 
 	err = json.Unmarshal(data, &result)
@@ -178,14 +216,11 @@ func (client *ClientAPI) ThreadsAll(page uint) ([]Post, error) {
 // Route: /api/v2/thread/$thread$/metadata
 func (client *ClientAPI) ThreadMetadata(id uint) (Post, error) {
 	result := Post{}
-	path := fmt.Sprintf(client.addr.PathThreadMetadata, id)
+	path := fmt.Sprintf(PATH_API_THREAD_METADATA, id)
+
 	data, err := client.get(path)
 	if err != nil {
 		return result, err
-	}
-
-	if client.debug {
-		fmt.Println(string(data))
 	}
 
 	err = json.Unmarshal(data, &result)
@@ -201,14 +236,11 @@ func (client *ClientAPI) ThreadMetadata(id uint) (Post, error) {
 // Route: /api/v2/thread/$thread$/replies
 func (client *ClientAPI) ThreadReplies(id uint) ([]Post, error) {
 	result := []Post{}
-	path := fmt.Sprintf(client.addr.PathThreadReplies, id)
+	path := fmt.Sprintf(PATH_API_THREAD_REPLIES, id)
+
 	data, err := client.get(path)
 	if err != nil {
 		return result, err
-	}
-
-	if client.debug {
-		fmt.Println(string(data))
 	}
 
 	err = json.Unmarshal(data, &result)
