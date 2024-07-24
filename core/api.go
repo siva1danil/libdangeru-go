@@ -1,9 +1,7 @@
 package core
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -48,44 +46,6 @@ func (client *ClientAPI) init() {
 	}
 }
 
-func (client *ClientAPI) get(path string) ([]byte, error) {
-	client.init()
-
-	url := client.Address + "/" + path
-
-	resp, err := client.Http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func (client *ClientAPI) post(path string, form url.Values) ([]byte, error) {
-	client.init()
-
-	url := client.Address + "/" + path
-
-	resp, err := client.Http.PostForm(url, form)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
 // Create a new thread.
 //
 // Route: /post
@@ -99,7 +59,8 @@ func (client *ClientAPI) PostThread(board string, title string, comment string, 
 		form.Add("capcode", "true")
 	}
 
-	_, err := client.post(path, form)
+	client.init()
+	_, _, err := PostRequest(client.Http, client.Address+"/"+path, form)
 	if err != nil {
 		return err
 	}
@@ -120,14 +81,14 @@ func (client *ClientAPI) PostReply(board string, parent uint, content string, ca
 		form.Add("capcode", "true")
 	}
 
-	data, err := client.post(path, form)
+	client.init()
+	body, _, err := PostRequest(client.Http, client.Address+"/"+path, form)
 	if err != nil {
 		return 0, err
 	}
-
-	result_str, ok := strings.CutPrefix(string(data), "OK/")
+	result_str, ok := strings.CutPrefix(string(body), "OK/")
 	if !ok {
-		return 0, fmt.Errorf("expected OK: %s", string(data))
+		return 0, fmt.Errorf("expected OK, got %s", string(body))
 	}
 	result, err := strconv.Atoi(result_str)
 	if err != nil {
@@ -144,20 +105,14 @@ func (client *ClientAPI) Boards() ([]string, error) {
 	result := []string{}
 	path := PATH_API_BOARDS
 
-	data, err := client.get(path)
+	client.init()
+	body, _, err := GetRequestJSON[[]string](client.Http, client.Address+"/"+path)
 	if err != nil {
 		return result, err
 	}
-
-	tmp := []string{}
-	err = json.Unmarshal(data, &tmp)
-	if err != nil {
-		return result, err
-	}
-
-	for i := 0; i < len(tmp); i++ {
-		if tmp[i] != "all" {
-			result = append(result, tmp[i])
+	for i := 0; i < len(body); i++ {
+		if body[i] != "all" {
+			result = append(result, body[i])
 		}
 	}
 
@@ -168,40 +123,30 @@ func (client *ClientAPI) Boards() ([]string, error) {
 //
 // Route: /api/v2/board/$board$/detail
 func (client *ClientAPI) BoardDetails(board string) (BoardDetails, error) {
-	result := BoardDetails{}
 	path := fmt.Sprintf(PATH_API_BOARD_DETAILS, board)
 
-	data, err := client.get(path)
+	client.init()
+	body, _, err := GetRequestJSON[BoardDetails](client.Http, client.Address+"/"+path)
 	if err != nil {
-		return result, err
+		return body, err
 	}
 
-	err = json.Unmarshal(data, &result)
-	if err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return body, nil
 }
 
 // Get active threads for a board. First page is 0.
 //
 // Route: /api/v2/board/$board$?page=$page$
 func (client *ClientAPI) Threads(board string, page uint) ([]Post, error) {
-	result := []Post{}
 	path := fmt.Sprintf(PATH_API_THREADS, board, page)
 
-	data, err := client.get(path)
+	client.init()
+	body, _, err := GetRequestJSON[[]Post](client.Http, client.Address+"/"+path)
 	if err != nil {
-		return result, err
+		return body, err
 	}
 
-	err = json.Unmarshal(data, &result)
-	if err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return body, nil
 }
 
 // Get active threads for all boards. First page is 0.
@@ -215,38 +160,28 @@ func (client *ClientAPI) ThreadsAll(page uint) ([]Post, error) {
 //
 // Route: /api/v2/thread/$thread$/metadata
 func (client *ClientAPI) ThreadMetadata(id uint) (Post, error) {
-	result := Post{}
 	path := fmt.Sprintf(PATH_API_THREAD_METADATA, id)
 
-	data, err := client.get(path)
+	client.init()
+	body, _, err := GetRequestJSON[Post](client.Http, client.Address+"/"+path)
 	if err != nil {
-		return result, err
+		return body, err
 	}
 
-	err = json.Unmarshal(data, &result)
-	if err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return body, nil
 }
 
 // Get all replies for a thread. Metadata is currently not parsed.
 //
 // Route: /api/v2/thread/$thread$/replies
 func (client *ClientAPI) ThreadReplies(id uint) ([]Post, error) {
-	result := []Post{}
 	path := fmt.Sprintf(PATH_API_THREAD_REPLIES, id)
 
-	data, err := client.get(path)
+	client.init()
+	body, _, err := GetRequestJSON[[]Post](client.Http, client.Address+"/"+path)
 	if err != nil {
-		return result, err
+		return body, err
 	}
 
-	err = json.Unmarshal(data, &result)
-	if err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return body, nil
 }

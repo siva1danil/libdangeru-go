@@ -12,5 +12,5 @@ const (
 	PATH_API_THREAD_REPLIES  = "api/v2/thread/%d/replies"
 
 	PATH_WEB_MAIN    = ""
-	PATH_WEB_ARCHIVE = "archive"
+	PATH_WEB_ARCHIVE = "archive?page=%d"
 )

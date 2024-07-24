@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -35,42 +34,25 @@ func (client *ClientWeb) init() {
 	}
 }
 
-func (client *ClientWeb) get(path string) ([]byte, error) {
-	client.init()
-
-	url := client.Address + "/" + path
-
-	req, err := client.Http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer req.Body.Close()
-
-	data, err := io.ReadAll(req.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
 // Try to extract latest news and statistics from the main page.
 func (client *ClientWeb) MainPage() (MainPage, error) {
 	result := MainPage{}
 	path := PATH_WEB_MAIN
-	data, err := client.get(path)
+
+	client.init()
+	body, _, err := GetRequest(client.Http, client.Address+"/"+path)
 	if err != nil {
 		return result, err
 	}
 
-	news := regexp.MustCompile(`<span class="redtext">(.*?)</span>`).FindSubmatch(data)
+	news := regexp.MustCompile(`<span class="redtext">(.*?)</span>`).FindSubmatch(body)
 	if news == nil {
 		return result, fmt.Errorf("find: expected match, got nil")
 	} else {
 		result.News = string(news[1])
 	}
 
-	html := strings.NewReplacer("\r", "", "\n", "", " ", "").Replace(string(data))
+	html := strings.NewReplacer("\r", "", "\n", "", " ", "").Replace(string(body))
 	threads := regexp.MustCompile(`(\d+)</span>threads`).FindStringSubmatch(html)
 	replies := regexp.MustCompile(`(\d+)</span>replies`).FindStringSubmatch(html)
 	archived_threads := regexp.MustCompile(`(\d+)</span><ahref="/archive">`).FindStringSubmatch(html)
@@ -101,13 +83,15 @@ func (client *ClientWeb) MainPage() (MainPage, error) {
 // Use ClientAPI.ThreadMetadata() to get full metadata.
 func (client *ClientWeb) ArchiveIndex(page uint) ([]ArchivePageEntry, error) {
 	result := []ArchivePageEntry{}
-	path := PATH_WEB_ARCHIVE
-	data, err := client.get(path)
+	path := fmt.Sprintf(PATH_WEB_ARCHIVE, page)
+
+	client.init()
+	body, _, err := GetRequest(client.Http, client.Address+"/"+path)
 	if err != nil {
 		return result, err
 	}
 
-	entries := regexp.MustCompile(`href="/(.+?)/thread/(\d+?)"`).FindAllSubmatch(data, -1)
+	entries := regexp.MustCompile(`href="/(.+?)/thread/(\d+?)"`).FindAllSubmatch(body, -1)
 	for i := 0; i < len(entries); i++ {
 		tmp, _ := strconv.ParseUint(string(entries[i][2]), 10, 32)
 		result = append(result, ArchivePageEntry{Board: string(entries[i][1]), ID: uint(tmp)})
